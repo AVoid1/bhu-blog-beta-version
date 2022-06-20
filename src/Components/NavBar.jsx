@@ -16,7 +16,7 @@ import { IoMoon, IoSearch, IoSunny, IoAdd, IoLogOut } from 'react-icons/io5'
 const NavBar = ({ user }) => {
   const { colorMode, toggleColorMode } = useColorMode();
   const bg = useColorModeValue("#757575", "#E0E0E0");
-  console.log(bg);
+  console.log(user);
   return (
     <Flex justifyContent={'space-between'}
       alignItems={'center'}
@@ -73,6 +73,7 @@ const NavBar = ({ user }) => {
           <MenuButton>
             <Image
               src={user?.photoURL}
+              // src="https://www.pixsy.com/wp-content/uploads/2021/04/ben-sweet-2LowviVHZ-E-unsplash-1.jpeg"
               width="40px"
               height="40px"
               rounded="full"

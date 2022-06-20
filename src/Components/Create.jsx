@@ -1,15 +1,90 @@
-import React, { useState } from 'react'
-import { Button, Flex, Input, InputGroup, InputLeftElement, Menu, MenuButton, MenuItem, MenuList, Text, useColorMode, useColorModeValue } from '@chakra-ui/react'
-import { IoChevronDown, IoLocation } from 'react-icons/io5';
+import React, { useState, useEffect, useRef } from 'react'
+import { Alert, Box, Button, Flex, FormLabel, Input, InputGroup, InputLeftElement, Menu, MenuButton, MenuItem, MenuList, Text, useColorMode, useColorModeValue } from '@chakra-ui/react'
+import { IoChevronDown, IoCloudUpload, IoLocation, IoThumbsUp, IoTrash, IoWarning } from 'react-icons/io5';
 import { categories } from '../data';
+import Spinner from "./Spinner";
+
+import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
+import { firebaseApp } from '../firebase-config';
+import AlertMsg from './AlertMsg';
+import { Editor } from '@tinymce/tinymce-react';
 
 const Create = () => {
   const { colorMode } = useColorMode();
   const bg = useColorModeValue("#999999", "#212121");
   const textColor = useColorModeValue("#212121", "#999999");
+
+  const editorRef = useRef(null);
+
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Choose an Category');
   const [location, setLocation] = useState('');
+  const [videoAsset, setVideoAsset] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(1);
+  const [alert, setAlert] = useState(false);
+  const [alertStatus, setAlertStatus] = useState('');
+  const [alertMsg, setAlertMsg] = useState('');
+  const [alertIcon, setAlertIcon] = useState(null);
+  const [description, setDescription] = useState('')
+
+  const storage = getStorage(firebaseApp)
+
+  const uploadImage = (e) => {
+    setLoading(true)
+    const videoFile = e.target.files[0];
+
+    const storageRef = ref(storage, `Video Blogs/${Date.now()}-${videoFile.name}`);
+
+    const uploadTask = uploadBytesResumable(storageRef, videoFile);
+    uploadTask.on('state_changed', (snapshot) => {
+      const uploadProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+      setProgress(uploadProgress)
+    }, (error) => {
+      console.log(error);
+    }, () => {
+      getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+        setVideoAsset(downloadURL);
+        setLoading(false);
+        setAlert(true);
+        setAlertStatus("success");
+        setAlertIcon(<IoThumbsUp fontSize={25} />);
+        setAlertMsg("Your video is uploaded successfully");
+        setTimeout(() => {
+          setAlert(false)
+        }, 4000)
+      });
+    })
+  };
+
+  const deleteImage = () => {
+    const deleteRef = ref(storage, videoAsset)
+    deleteObject(deleteRef).then(() => {
+      setVideoAsset(null)
+      setAlert(true);
+      setAlertStatus("error");
+      setAlertIcon(<IoWarning fontSize={25} />);
+      setAlertMsg("Your video is removed");
+      setTimeout(() => {
+        setAlert(false)
+      }, 4000)
+    })
+  }
+
+  const getDescriptionValue = () => {
+    if (editorRef.current) {
+      console.log(editorRef.current.getContent());
+      setDescription(editorRef.current.getContent());
+    }
+  };
+
+  const uploadDetails = () => {
+
+  };
+
+  useEffect(() => {
+    console.log(videoAsset);
+  }, [title, location, description, category]);
 
   return (
     <Flex justifyContent={'center'}
@@ -31,6 +106,7 @@ const Create = () => {
         justifyContent={"center"}
         gap={2}
       >
+        {alert && <AlertMsg status={alertStatus} msg={alertMsg} icon={alertIcon} />}
         <Input
           variant={"flushed"}
           placeholder="title"
@@ -85,7 +161,7 @@ const Create = () => {
               pointerEvents='none'
               children={<IoLocation
                 fontSize={20}
-                color={`${colorMode == "dark" ? "#F1F1F1" : "#111"}`}
+                color={`${colorMode === "dark" ? "#F1F1F1" : "#111"}`}
               />}
             />
             <Input
@@ -112,11 +188,125 @@ const Create = () => {
           overflow="hidden"
           position={'relative'}
         >
+          {!videoAsset ?
+            (<FormLabel width={'full'}>
+              <Flex
+                direction={'column'}
+                alignItems="center"
+                justifyContent={'center'}
+                height="full"
+                width={'full'}
 
+              >
+                <Flex
+                  direction={'column'}
+                  alignItems="center"
+                  justifyContent={'center'}
+                  height="full"
+                  width={'full'}
+                  cursor="pointer"
+                >
+                  {loading ?
+                    (<Spinner msg={'Uploading Your Video'} progress={progress} />) :
+                    (<>
+                      <IoCloudUpload
+                        fontSize={20}
+                        color={`${colorMode === "dark" ? "#F1F1F1" : "#111"}`}
+                      />
+                      <Text
+                        mt={5}
+                        fontSize={20}
+                        color={textColor}
+                      >
+                        Click to Upload
+                      </Text>
+                    </>)}
+                </Flex>
+              </Flex>
+              {!loading && (
+                <input
+                  type={'file'}
+                  name="upload-image"
+                  onChange={uploadImage}
+                  style={{ width: 0, height: 0 }}
+                  accept="video/mp4, video/x-m4v, video/*"
+                >
+
+                </input>
+              )}
+            </FormLabel>
+            ) : (
+              <Flex
+                width={'full'}
+                height="full"
+                alignItems={"center"}
+                justifyContent={"center"}
+                bg="black"
+                position={"relative"}
+              >
+                <Flex
+                  justifyContent={"center"}
+                  alignItems="center"
+                  width={"40px"}
+                  height="40px"
+                  rounded={"full"}
+                  bg={"red"}
+                  top={5}
+                  right={5}
+                  position={"absolute"}
+                  cursor={"pointer"}
+                  zIndex={10}
+                  onClick={deleteImage}
+                >
+                  <IoTrash fontSize={20} color="white" />
+                </Flex>
+
+                <video
+                  src={videoAsset}
+                  controls
+                  style={{ width: "100%", height: "100%" }}
+                />
+              </Flex>
+            )}
         </Flex>
-      </Flex>
 
-    </Flex>
+        <Editor
+          onChange={getDescriptionValue}
+          onInit={(evt, editor) => editorRef.current = editor}
+          apiKey={process.env.REACT_APP_TINYMCE_API_ID}
+          init={{
+            height: 500,
+            width: "100%",
+            menubar: false,
+            plugins: [
+              'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+              'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+              'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | blocks | ' +
+              'bold italic forecolor | alignleft aligncenter ' +
+              'alignright alignjustify | bullist numlist outdent indent | ' +
+              'removeformat | help',
+            content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+            content_css: "dark",
+            skin: "oxide-dark"
+          }}
+        />
+
+        <Button
+          isLoading={loading}
+          loadingText="Uploading"
+          colorScheme={"linkedin"}
+          variant={`${loading ? "outline" : "solid"}`}
+          width={'xl'}
+          _hover={{ shadow: 'lg' }}
+          fontSize={20}
+          onClick={() => uploadDetails()}
+        >
+
+        </Button>
+      </Flex>
+    </Flex >
   )
 };
 
