@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Flex } from '@chakra-ui/react';
 // import { NavBar } from '../Components';
 import { Category, Create, Feed, NavBar, Search, VideoPin } from '../Components';
 import { Routes, Route } from 'react-router-dom';
 import { categories } from '../data';
 
+
 const Home = ({ user }) => {
+
+
     return (
         <>
             <NavBar user={user} />

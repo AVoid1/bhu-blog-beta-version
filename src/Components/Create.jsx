@@ -8,6 +8,9 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } f
 import { firebaseApp } from '../firebase-config';
 import AlertMsg from './AlertMsg';
 import { Editor } from '@tinymce/tinymce-react';
+import { fetchUser } from '../utils/fetchUser';
+import { doc, getFirestore, setDoc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 
 const Create = () => {
   const { colorMode } = useColorMode();
@@ -26,9 +29,13 @@ const Create = () => {
   const [alertStatus, setAlertStatus] = useState('');
   const [alertMsg, setAlertMsg] = useState('');
   const [alertIcon, setAlertIcon] = useState(null);
-  const [description, setDescription] = useState('')
+  const [description, setDescription] = useState('');
 
-  const storage = getStorage(firebaseApp)
+  const [userInfo] = fetchUser();
+  const navigate = useNavigate();
+
+  const storage = getStorage(firebaseApp);
+  const firebaseDb = getFirestore(firebaseApp);
 
   const uploadImage = (e) => {
     setLoading(true)
@@ -78,8 +85,38 @@ const Create = () => {
     }
   };
 
-  const uploadDetails = () => {
+  const uploadDetails = async () => {
+    try {
+      setLoading(true);
+      if (!title, !category, !videoAsset) {
+        setAlert(true);
+        setAlertStatus("error");
+        setAlertIcon(<IoWarning fontSize={25} />);
+        setAlertMsg("Required fields are missing!");
+        setTimeout(() => {
+          setAlert(false);
+        }, 4000);
+        setLoading(false);
+      }
+      else {
+        const data = {
+          id: `${Date.now()}`,
+          title: title,
+          userId: userInfo?.uid,
+          category: category,
+          location: location,
+          videoUrl: videoAsset,
+          description: description,
+        };
 
+        await setDoc(doc(firebaseDb, "videos", `${Date.now()}`), data);
+        setLoading(false);
+        navigate('/', { replace: true });
+      }
+    }
+    catch (error) {
+      console.log(error);
+    }
   };
 
   useEffect(() => {
@@ -303,7 +340,7 @@ const Create = () => {
           fontSize={20}
           onClick={() => uploadDetails()}
         >
-
+          Upload
         </Button>
       </Flex>
     </Flex >
