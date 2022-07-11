@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Flex } from '@chakra-ui/react';
 // import { NavBar } from '../Components';
-import { Category, Create, Feed, NavBar, Search, VideoPin } from '../Components';
+import { Category, Create, Feed, NavBar, Search, UserProfile, VideoPin, VideoPinDetail } from '../Components';
 import { Routes, Route } from 'react-router-dom';
 import { categories } from '../data';
 
@@ -25,16 +25,16 @@ const Home = ({ user }) => {
                 <Flex
                     width={"95%"}
                     px={4}
-
-                // justifyContent="start"
-                // alignItems={'center'}
+                    justifyContent="start"
+                    alignItems={'center'}
                 >
                     <Routes>
                         <Route path='/' element={<Feed />} />
                         <Route path='/category:categoryId' element={<Feed />} />
                         <Route path='/create' element={<Create />} />
-                        <Route path='/videoDetail' element={<VideoPin />} />
+                        <Route path="/videoDetail/:videoId" element={<VideoPinDetail />} />
                         <Route path='/Search' element={<Search />} />
+                        <Route path="/userDetail/:userId" element={<UserProfile />} />
 
                     </Routes>
 

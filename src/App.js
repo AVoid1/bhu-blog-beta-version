@@ -11,7 +11,7 @@ const App = () => {
   useEffect(() => {
     const accessToken = userAccessToken();
     if (!accessToken) {
-      navigate("./login", { replace: true });
+      navigate("/login", { replace: true });
     } else {
       const [userInfo] = fetchUser();
       setUser(userInfo);
